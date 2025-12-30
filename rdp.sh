@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Warna
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -18,47 +17,22 @@ echo -e ' $$ |  $$\ $$   ____| $$  $$<  $$   ____|$$ |      $$ |  $$ |$$ |  $$ |
 echo -e ' \$$$$$$  |\$$$$$$$\ $$  /\$$\ \$$$$$$$\ $$ |      $$ |  $$ |$$$$$$$  |$$ |      '
 echo -e '  \______/  \_______|\__/  \__| \_______|\__|      \__|  \__|\_______/ \__|      '
 echo -e '\e[0m'
-echo -e "${YELLOW}           >>> Premium Windows VPS Manager by AmirCexi <<<${NC}"
 echo -e "Join our Telegram channel: t.me/AmirCexi"
 echo -e "------------------------------------------------------------"
 
-echo -e "1) ${GREEN}Install Windows RDP${NC}"
-echo -e "2) ${RED}Uninstall Windows RDP${NC}"
-echo -e "3) Keluar"
-read -p "Sila pilih menu [1-3]: " MAIN_CHOICE
+echo -e "1) Install Windows RDP"
+echo -e "2) Uninstall Windows RDP"
+read -p "Pilihan anda: " choice
 
-# ----------------- FUNGSI UNINSTALL -----------------
-if [ "$MAIN_CHOICE" == "2" ]; then
-    echo -e "${YELLOW}Memulakan proses Uninstall...${NC}"
-    if [ -f "docker-compose.yml" ]; then
-        docker compose down
-        rm docker-compose.yml
-        echo -e "${GREEN}Windows RDP telah berjaya dibuang!${NC}"
-    else
-        echo -e "${RED}Fail docker-compose.yml tidak dijumpai. Tiada apa untuk di-uninstall.${NC}"
-    fi
+if [ "$choice" == "2" ]; then
+    echo -e "${YELLOW}Uninstalling Windows...${NC}"
+    docker compose down && rm docker-compose.yml
+    echo -e "${GREEN}Uninstall selesai.${NC}"
     exit 1
 fi
 
-if [ "$MAIN_CHOICE" == "3" ]; then
-    exit 1
-fi
-
-# ----------------- FUNGSI INSTALL -----------------
-
-# Install Docker jika belum ada
-echo -e "${CYAN}Memeriksa Docker...${NC}"
-if ! command -v docker &> /dev/null; then
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-    sudo systemctl enable docker && sudo systemctl start docker
-fi
-
-# Senarai Penuh Windows
-echo -e "\n${YELLOW}List of available Windows versions:${NC}"
+# Format List Asal yang Amir nak
+echo "Select a Windows version from the list below:"
 echo " Value  | Version                   | Size"
 echo "--------------------------------------"
 echo " 11     | Windows 11 Pro             | 5.4 GB"
@@ -78,17 +52,26 @@ echo " 2016   | Windows Server 2016        | 6.5 GB"
 echo " 2012   | Windows Server 2012        | 4.3 GB"
 echo " 2008   | Windows Server 2008        | 3.0 GB"
 echo " 2003   | Windows Server 2003        | 0.6 GB"
-echo ""
 
-read -p "Enter Value: " WINDOWS_VERSION
-read -p "Enter Username: " WINDOWS_USERNAME
-read -s -p "Enter Password: " WINDOWS_PASSWORD
-echo ""
-read -p "Enter RAM (e.g 4G): " RAM_SIZE
-read -p "Enter CPU Cores: " CPU_CORES
-read -p "Enter Disk Size (e.g 60G): " DISK_SIZE
+echo "Enter the value for the Windows version you want to use:"
+read WINDOWS_VERSION
 
-# Buat fail Config dengan Port Tinggi (Rahsia)
+echo "Enter a username for Windows:"
+read WINDOWS_USERNAME
+
+echo "Enter a password for Windows:"
+read -s WINDOWS_PASSWORD
+
+echo "Enter RAM size (e.g., 8G):"
+read RAM_SIZE
+
+echo "Enter the number of CPU cores (e.g., 4):"
+read CPU_CORES
+
+echo "Enter disk size (e.g., 256G):"
+read DISK_SIZE
+
+# Config dengan Port Selamat (61006 & 62345)
 cat > docker-compose.yml <<EOF
 services:
   windows:
@@ -118,7 +101,7 @@ docker compose up -d
 
 PUBLIC_IP=$(curl -s ifconfig.me || curl -s icanhazip.com)
 
-echo -e "\n${GREEN}CEXI RDP Deployed Successfully!${NC}"
-echo -e "${CYAN}Web Install (Browser): http://$PUBLIC_IP:61006${NC}"
-echo -e "${CYAN}RDP Address (Mobile/PC): $PUBLIC_IP:62345${NC}"
+echo -e "${GREEN}Docker Compose started successfully!${NC}"
+echo -e "${CYAN}Web Install: http://$PUBLIC_IP:61006${NC}"
+echo -e "${CYAN}RDP Connect: $PUBLIC_IP:62345${NC}"
 echo -e "${YELLOW}Support: t.me/AmirCexi${NC}"
