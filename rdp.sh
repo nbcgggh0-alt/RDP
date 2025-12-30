@@ -17,61 +17,74 @@ echo -e ' $$ |  $$\ $$   ____| $$  $$<  $$   ____|$$ |      $$ |  $$ |$$ |  $$ |
 echo -e ' \$$$$$$  |\$$$$$$$\ $$  /\$$\ \$$$$$$$\ $$ |      $$ |  $$ |$$$$$$$  |$$ |      '
 echo -e '  \______/  \_______|\__/  \__| \_______|\__|      \__|  \__|\_______/ \__|      '
 echo -e '\e[0m'
-echo -e "Join our Telegram channel: t.me/AmirCexi"
+echo -e "${YELLOW}           >>> Premium Windows VPS Manager by AmirCexi <<<${NC}"
 echo -e "------------------------------------------------------------"
 
 echo -e "1) Install Windows RDP"
 echo -e "2) Uninstall Windows RDP"
+echo -e "3) Check Installation Logs"
+echo -e "4) ${GREEN}Update Allowed IP (Jika IP Wifi berubah)${NC}"
+echo -e "5) Keluar"
 read -p "Pilihan anda: " choice
 
-if [ "$choice" == "2" ]; then
-    echo -e "${YELLOW}Uninstalling Windows...${NC}"
-    docker compose down && rm docker-compose.yml
-    echo -e "${GREEN}Uninstall selesai.${NC}"
+# ----------------- FUNGSI UPDATE IP -----------------
+if [ "$choice" == "4" ]; then
+    read -p "Masukkan IPv4 baru anda: " NEW_IP
+    echo -e "${CYAN}Mengemaskini Firewall...${NC}"
+    # Benarkan IP baru
+    sudo ufw allow from $NEW_IP to any port 61006 proto tcp
+    sudo ufw allow from $NEW_IP to any port 62345 proto tcp
+    sudo ufw allow from $NEW_IP to any port 62345 proto udp
+    echo -e "${GREEN}Berjaya! IP $NEW_IP kini dibenarkan access RDP.${NC}"
     exit 1
 fi
 
-# Format List Asal yang Amir nak
+# ----------------- FUNGSI LOGS -----------------
+if [ "$choice" == "3" ]; then
+    docker logs windows -f
+    exit 1
+fi
+
+# ----------------- FUNGSI UNINSTALL -----------------
+if [ "$choice" == "2" ]; then
+    echo -e "${YELLOW}Uninstalling...${NC}"
+    docker compose down && rm docker-compose.yml
+    echo -e "${GREEN}Selesai dibuang.${NC}"
+    exit 1
+fi
+
+if [ "$choice" == "5" ]; then exit 1; fi
+
+# ----------------- FUNGSI INSTALL -----------------
 echo "Select a Windows version from the list below:"
 echo " Value  | Version                   | Size"
 echo "--------------------------------------"
 echo " 11     | Windows 11 Pro             | 5.4 GB"
-echo " 11l    | Windows 11 LTSC            | 4.2 GB"
-echo " 11e    | Windows 11 Enterprise      | 5.8 GB"
 echo " 10     | Windows 10 Pro             | 5.7 GB"
-echo " 10l    | Windows 10 LTSC            | 4.6 GB"
-echo " 10e    | Windows 10 Enterprise      | 5.2 GB"
-echo " 8e     | Windows 8.1 Enterprise     | 3.7 GB"
-echo " 7e     | Windows 7 Enterprise       | 3.0 GB"
-echo " ve     | Windows Vista Enterprise   | 3.0 GB"
-echo " xp     | Windows XP Professional    | 0.6 GB"
-echo " 2025   | Windows Server 2025        | 5.0 GB"
 echo " 2022   | Windows Server 2022        | 4.7 GB"
-echo " 2019   | Windows Server 2019        | 5.3 GB"
-echo " 2016   | Windows Server 2016        | 6.5 GB"
-echo " 2012   | Windows Server 2012        | 4.3 GB"
-echo " 2008   | Windows Server 2008        | 3.0 GB"
-echo " 2003   | Windows Server 2003        | 0.6 GB"
+echo " xp     | Windows XP Professional    | 0.6 GB"
 
-echo "Enter the value for the Windows version you want to use:"
-read WINDOWS_VERSION
+echo -e "\n${CYAN}--- Konfigurasi Windows ---${NC}"
+read -p "Enter Value Version: " WINDOWS_VERSION
+read -p "Enter Username: " WINDOWS_USERNAME
+read -s -p "Enter Password: " WINDOWS_PASSWORD
+echo ""
+read -p "Enter RAM (cth: 4G): " RAM_SIZE
+read -p "Enter CPU Cores (cth: 2): " CPU_CORES
+read -p "Enter Disk Size (cth: 50G): " DISK_SIZE
 
-echo "Enter a username for Windows:"
-read WINDOWS_USERNAME
+echo -e "\n${RED}--- Konfigurasi Firewall IP ---${NC}"
+read -p "Masukkan IP Wifi anda sekarang: " USER_IP
 
-echo "Enter a password for Windows:"
-read -s WINDOWS_PASSWORD
+# Setup Firewall UFW secara selamat
+sudo apt install ufw -y
+sudo ufw allow 22/tcp  # Jangan bagi Putty terputus
+sudo ufw allow from $USER_IP to any port 61006 proto tcp
+sudo ufw allow from $USER_IP to any port 62345 proto tcp
+sudo ufw allow from $USER_IP to any port 62345 proto udp
+echo "y" | sudo ufw enable
 
-echo "Enter RAM size (e.g., 8G):"
-read RAM_SIZE
-
-echo "Enter the number of CPU cores (e.g., 4):"
-read CPU_CORES
-
-echo "Enter disk size (e.g., 256G):"
-read DISK_SIZE
-
-# Config dengan Port Selamat (61006 & 62345)
+# Buat Config Docker
 cat > docker-compose.yml <<EOF
 services:
   windows:
@@ -101,7 +114,6 @@ docker compose up -d
 
 PUBLIC_IP=$(curl -s ifconfig.me || curl -s icanhazip.com)
 
-echo -e "${GREEN}Docker Compose started successfully!${NC}"
-echo -e "${CYAN}Web Install: http://$PUBLIC_IP:61006${NC}"
+echo -e "\n${GREEN}INSTALL SELESAI!${NC}"
 echo -e "${CYAN}RDP Connect: $PUBLIC_IP:62345${NC}"
-echo -e "${YELLOW}Support: t.me/AmirCexi${NC}"
+echo -e "${YELLOW}Tips: Jika Wifi anda restart & RDP tak boleh masuk, jalankan skrip ini & pilih Menu 4.${NC}"
