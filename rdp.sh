@@ -4,105 +4,88 @@
 R='\033[1;31m'; G='\033[1;32m'; Y='\033[1;33m'; B='\033[1;34m'
 M='\033[1;35m'; C='\033[1;36m'; W='\033[1;37m'; NC='\033[0m'
 
-# --- [ DETECT AUTO IP ] ---
+# --- [ DETECT IP ] ---
 DETECTED_IP=$(echo $SSH_CLIENT | awk '{print $1}')
+MY_SERVER_IP=$(curl -s ifconfig.me)
 
-# --- [ ANIMATION: NYAN CAT ] ---
-nyan_loading() {
-    local duration=3
-    local frames=("~-~-~-~-~-^..^" "-~-~-~-~-~^..^" "~-~-~-~-~-^..^")
-    for ((i=0; i<duration*10; i++)); do
-        echo -ne "\r${M}${frames[i%3]} ${R}L${Y}O${G}A${B}D${M}I${R}N${Y}G ${G}C${B}E${M}X${R}I...${NC} "
-        sleep 0.1
-    done
-    echo -e "\n"
-}
-
-# --- [ CEXISTORE ASCII LOGO ] ---
+# --- [ HEADER ] ---
 show_header() {
     clear
     echo -e "${C}"
-    echo '      ██████╗███████╗██╗  ██╗██╗███████╗████████╗ ██████╗ ██████╗ ███████╗'
-    echo '     ██╔════╝██╔════╝╚██╗██╔╝██║██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝'
-    echo '     ██║     █████╗   ╚███╔╝ ██║███████╗   ██║   ██║   ██║██████╔╝█████╗  '
-    echo '     ██║     █████╗   ██╔██╗ ██║╚════██║   ██║   ██║   ██║██╔══██╗█████╗  '
-    echo '     ╚██████╗███████╗██╔╝ ██╗██║███████║   ██║   ╚██████╔╝██║  ██║███████╗'
-    echo '      ╚═════╝╚══════╝╚═╝  ╚═╝╚═╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝'
-    echo -e "                   ${W}S A L E S   O N L I N E   A N D   C H E A P S${NC}"
-    echo -e "${B}----------------------------------------------------------------------------${NC}"
-    echo -e "${W}  CEXI RDP MANAGER v7.0 | Detected IP: ${G}${DETECTED_IP:-N/A}${NC}"
-    echo -e "${B}----------------------------------------------------------------------------${NC}"
+    echo '      ██████╗███████╗██╗  ██╗██╗███████╗████████╗ ██████╗ ██████╗'
+    echo '     ██╔════╝██╔════╝╚██╗██╔╝██║██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗'
+    echo '     ██║     █████╗   ╚███╔╝ ██║███████╗   ██║   ██║   ██║██████╔╝'
+    echo '     ██║     █████╗   ██╔██╗ ██║╚════██║   ██║   ██║   ██║██╔══██╗'
+    echo '     ╚██████╗███████╗██╔╝ ██╗██║███████║   ██║   ╚██████╔╝██║  ██║'
+    echo '      ╚═════╝╚══════╝╚═╝  ╚═╝╚═╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝'
+    echo -e "      ${W}HIGH SPEC EDITION (DO AMD) - v8.0${NC}"
+    echo -e "${B}------------------------------------------------------------${NC}"
+    echo -e "Host: ${W}DigitalOcean Premium AMD${NC} | RAM: ${W}16GB${NC} | Cores: ${W}8${NC}"
+    echo -e "${B}------------------------------------------------------------${NC}"
+}
+
+# --- [ INSTALL DOCKER AUTOMATICALLY ] ---
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${Y}[!] Docker tak jumpa. Sedang install Docker rasmi...${NC}"
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
+        echo -e "${G}[✓] Docker berjaya diinstall!${NC}"
+        rm get-docker.sh
+    else
+        echo -e "${G}[✓] Docker dah ada.${NC}"
+    fi
 }
 
 # --- [ MAIN MENU ] ---
 show_header
-echo -e "${W}[1] Deploy Windows VPS (Auto Whitelist)${NC}"
-echo -e "${W}[2] Uninstall Windows VPS${NC}"
-echo -e "${W}[3] View Live Logs (Docker)${NC}"
-echo -e "${W}[4] Update Firewall (Add New IP)${NC}"
-echo -e "${W}[5] Exit Terminal${NC}"
-echo -e "${B}----------------------------------------------------------------------------${NC}"
-echo -ne "${Y}Sila pilih menu: ${NC}"; read opt
+check_docker
+echo -e "${W}[1] Deploy Windows (Auto KVM Check)${NC}"
+echo -e "${W}[2] Delete/Reset Windows${NC}"
+echo -e "${W}[3] Tengok Logs (Monitor Install)${NC}"
+echo -e "${W}[4] Update Firewall IP${NC}"
+echo -e "${B}------------------------------------------------------------${NC}"
+echo -ne "${Y}Pilihan: ${NC}"; read opt
 
 case $opt in
     1)
-        nyan_loading
-        
         # Check Dependencies
         if ! command -v fail2ban-client &> /dev/null; then
-            echo -e "${W}[${G}*${W}] ${C}Installing Security: Fail2Ban...${NC}"
+            echo -e "${C}Installing Security Tools...${NC}"
             sudo apt update -q && sudo apt install -y fail2ban > /dev/null 2>&1
         fi
 
-        # Senarai Penuh Windows (Full Logic)
-        echo -e "\n${Y}Select Windows Version:${NC}"
-        echo -e "Value | Version                   | Size"
-        echo -e "${B}--------------------------------------${NC}"
-        echo "11    | Windows 11 Pro             | 5.4 GB"
-        echo "11l   | Windows 11 LTSC            | 4.2 GB"
-        echo "11e   | Windows 11 Enterprise      | 5.8 GB"
-        echo "10    | Windows 10 Pro             | 5.7 GB"
-        echo "10l   | Windows 10 LTSC            | 4.6 GB"
-        echo "10e   | Windows 10 Enterprise      | 5.2 GB"
-        echo "8e    | Windows 8.1 Enterprise     | 3.7 GB"
-        echo "7e    | Windows 7 Enterprise       | 3.0 GB"
-        echo "ve    | Windows Vista Enterprise   | 3.0 GB"
-        echo "xp    | Windows XP Professional    | 0.6 GB"
-        echo "2025  | Windows Server 2025        | 5.0 GB"
-        echo "2022  | Windows Server 2022        | 4.7 GB"
-        echo "2019  | Windows Server 2019        | 5.3 GB"
-        echo "2016  | Windows Server 2016        | 6.5 GB"
-        echo "2012  | Windows Server 2012        | 4.3 GB"
-        echo "2008  | Windows Server 2008        | 3.0 GB"
-        echo "2003  | Windows Server 2003        | 0.6 GB"
-        echo -e "${B}--------------------------------------${NC}"
+        # Senarai Windows
+        echo -e "\n${Y}Pilih Version Windows:${NC}"
+        echo -e "11  : Windows 11 Pro (Berat tapi Canggih)"
+        echo -e "10  : Windows 10 Pro (Stabil)"
+        echo -e "tin : Tiny 11 (Paling Laju/Ringan)"
+        echo -e "2022: Windows Server 2022"
+        echo -ne "${W}Taip kod (cth: 11): ${NC}"; read WIN_VER
         
-        # FIXED SYNTAX: Gunakan cara echo -ne sebelum read untuk elak ralat subshell
-        echo -ne "${W}Value Version: ${NC}"; read WIN_VER
-        echo -ne "${W}RDP Username: ${NC}"; read WIN_USER
-        echo -ne "${W}RDP Password: ${NC}"; read -s WIN_PASS; echo
-        echo -ne "${W}RAM Size (eg 8G): ${NC}"; read RAM
-        echo -ne "${W}CPU Cores: ${NC}"; read CORES
-        echo -ne "${W}Disk Size (eg 100G): ${NC}"; read DISK
+        echo -ne "${W}Set Username RDP: ${NC}"; read WIN_USER
+        echo -ne "${W}Set Password RDP: ${NC}"; read -s WIN_PASS; echo
+        
+        # Suggestion for DO Premium
+        echo -e "\n${M}[!] Setting Hardware (DO AMD 8 Core)${NC}"
+        echo -ne "${W}RAM (Recommend 12G): ${NC}"; read RAM
+        echo -ne "${W}Cores (Recommend 6): ${NC}"; read CORES
+        echo -ne "${W}Disk (Recommend 64G): ${NC}"; read DISK
 
-        echo -e "\n${M}[!] CUSTOM PORT SETTINGS${NC}"
-        echo -ne "${Y}Secret Web Port: ${NC}"; read P_WEB
-        echo -ne "${Y}Secret RDP Port: ${NC}"; read P_RDP
+        echo -e "\n${M}[!] Setting Port (Nombor 5 Digit)${NC}"
+        echo -ne "${Y}Port Web (cth 20080): ${NC}"; read P_WEB
+        echo -ne "${Y}Port RDP (cth 20089): ${NC}"; read P_RDP
         
-        echo -e "\n${M}[!] SECURITY WHITE-LIST${NC}"
+        # Whitelist Logic
         if [ ! -z "$DETECTED_IP" ]; then
-            echo -e "${W}IP Anda dikesan: ${G}$DETECTED_IP${NC}"
-            echo -ne "${Y}Guna IP ini untuk Whitelist? (y/n): ${NC}"; read use_auto
-            if [ "$use_auto" == "y" ]; then
-                MYIP=$DETECTED_IP
-            else
-                echo -ne "${Y}Masukkan IPv4 Manual: ${NC}"; read MYIP
-            fi
+            echo -ne "${Y}Whitelist IP anda ($DETECTED_IP)? (y/n): ${NC}"; read use_auto
+            if [ "$use_auto" == "y" ]; then MYIP=$DETECTED_IP; else echo -ne "Masukkan IP Manual: "; read MYIP; fi
         else
-            echo -ne "${Y}Masukkan IPv4 Whitelist: ${NC}"; read MYIP
+            echo -ne "Masukkan IP Manual: "; read MYIP
         fi
 
-        echo -ne "${C}[*] Configuring Firewall Lockdown... ${NC}"
+        # Firewall
+        echo -ne "${C}[*] Setup Firewall... ${NC}"
         sudo ufw allow 22/tcp > /dev/null 2>&1
         sudo ufw allow from $MYIP to any port $P_WEB proto tcp
         sudo ufw allow from $MYIP to any port $P_RDP proto tcp
@@ -110,47 +93,49 @@ case $opt in
         echo "y" | sudo ufw enable > /dev/null 2>&1
         echo -e "${G}DONE${NC}"
 
-        cat > docker-compose.yml <<EOF
-services:
-  windows:
-    image: dockurr/windows
-    container_name: windows
-    environment:
-      VERSION: "$WIN_VER"
-      USERNAME: "$WIN_USER"
-      PASSWORD: "$WIN_PASS"
-      RAM_SIZE: "$RAM"
-      CPU_CORES: "$CORES"
-      DISK_SIZE: "$DISK"
-    devices:
-      - /dev/kvm
-      - /dev/net/tun
-    cap_add:
-      - NET_ADMIN
-    ports:
-      - $P_WEB:8006
-      - $P_RDP:3389/tcp
-      - $P_RDP:3389/udp
-    restart: always
-EOF
-
-        echo -e "${W}[${G}*${W}] ${C}Deploying Container Engine...${NC}"
-        docker compose up -d
+        # KVM Check Logic
+        echo -e "${W}[*] Checking KVM (Virtualization)...${NC}"
+        docker rm -f windows > /dev/null 2>&1
         
-        IP=$(curl -s ifconfig.me)
-        echo -e "\n${G}SUCCESS: SYSTEM DEPLOYED!${NC}"
+        if [ -e /dev/kvm ]; then
+            echo -e "${G}🔥 KVM DIKESAN! Performance Maksimum.${NC}"
+            DEVICE_FLAG="--device /dev/kvm"
+        else
+            echo -e "${R}⚠️ KVM TIADA. Guna Software Mode (CPU mungkin tinggi sikit).${NC}"
+            DEVICE_FLAG=""
+        fi
+
+        echo -e "${W}[*] Sedang Deploy Windows... Sila tunggu.${NC}"
+        
+        docker run -d \
+          --name windows \
+          --cap-add NET_ADMIN \
+          $DEVICE_FLAG \
+          -p $P_WEB:8006 \
+          -p $P_RDP:3389 \
+          -p $P_RDP:3389/udp \
+          -e VERSION="$WIN_VER" \
+          -e USERNAME="$WIN_USER" \
+          -e PASSWORD="$WIN_PASS" \
+          -e RAM_SIZE="$RAM" \
+          -e CPU_CORES="$CORES" \
+          -e DISK_SIZE="$DISK" \
+          --restart always \
+          dockurr/windows
+
+        echo -e "\n${G}✅ SIAP DEPLOY! Tunggu 5-10 minit untuk install.${NC}"
         echo -e "${B}------------------------------------------------------------${NC}"
-        echo -e "${W} WEB LOGIN : ${C}http://$IP:$P_WEB${NC}"
-        echo -e "${W} RDP LOGIN : ${C}$IP:$P_RDP${NC}"
-        echo -e "${W} AUTH IP   : ${C}$MYIP${NC}"
+        echo -e "Web Monitor : ${C}http://$MY_SERVER_IP:$P_WEB${NC}"
+        echo -e "RDP Address : ${C}$MY_SERVER_IP:$P_RDP${NC}"
+        echo -e "Login User  : ${C}$WIN_USER${NC}"
+        echo -e "Login Pass  : ${C}$WIN_PASS${NC}"
         echo -e "${B}------------------------------------------------------------${NC}"
-        echo -e "${Y}Telegram: t.me/AmirCexi${NC}"
         ;;
     2)
-        docker compose down && rm docker-compose.yml
-        echo -e "${G}Success: Session Removed.${NC}"
+        docker rm -f windows
+        echo -e "${G}Windows dipadam.${NC}"
         ;;
-    3) docker logs windows -f ;;
+    3) docker logs -f windows ;;
     4)
         echo -ne "Masukkan IP Baru: "; read NIP
         echo -ne "Port Web tadi: "; read PW
@@ -158,7 +143,9 @@ EOF
         sudo ufw allow from $NIP to any port $PW proto tcp
         sudo ufw allow from $NIP to any port $PR proto tcp
         sudo ufw allow from $NIP to any port $PR proto udp
-        echo -e "${G}Whitelist Updated for $NIP${NC}"
+        sudo ufw reload
+        echo -e "${G}Whitelist Updated!${NC}"
         ;;
     *) exit 0 ;;
 esac
+
